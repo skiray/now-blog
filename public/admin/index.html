@@ -8,6 +8,17 @@
     <title>内容管理 · NowBlog</title>
   </head>
   <body>
-    <script src="./decap-cms.js"></script>
+    <!--
+      Decap CMS is loaded from jsDelivr, pinned to an exact version, instead of
+      committing the ~4.8 MB bundle to the repo. To upgrade, bump the version
+      here AND the SRI hash below:
+        curl -sL https://cdn.jsdelivr.net/npm/decap-cms@<version>/dist/decap-cms.js \
+          | openssl dgst -sha384 -binary | openssl base64 -A
+    -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/decap-cms@3.17.1/dist/decap-cms.js"
+      integrity="sha384-d2pbrhjc5asvSK35gKkrgRIk0Wq+2CQynWnXtSsYWQawXCgBXhcAK737jBAKXT4T"
+      crossorigin="anonymous"
+    ></script>
   </body>
 </html>

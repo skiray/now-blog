@@ -1,12 +1,27 @@
-const CLIENT_ID = "Ov23liuBf0DK6It6qYJ9";
+/**
+ * GitHub OAuth step 2 — exchange the code for a token and hand it back to the
+ * CMS popup via postMessage (`authorization:github:success:{...}`).
+ *
+ * Needs `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` (see .env.example).
+ * The default client id is public; the secret must be a Pages env var.
+ */
+const FALLBACK_CLIENT_ID = "Ov23liuBf0DK6It6qYJ9";
 
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
-  const base = `${url.protocol}//${url.host}`;
+  const base = env.SITE_ORIGIN || `${url.protocol}//${url.host}`;
   const code = url.searchParams.get("code");
 
   if (!code) {
     return render("authorization:github:error:", { message: "Missing code from GitHub" }, base);
+  }
+
+  if (!env.GITHUB_CLIENT_SECRET) {
+    return render(
+      "authorization:github:error:",
+      { message: "GITHUB_CLIENT_SECRET is not configured on this deployment." },
+      base
+    );
   }
 
   let payload;
@@ -15,8 +30,8 @@ export async function onRequestGet({ request, env }) {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
-        client_id: CLIENT_ID,
-        client_secret: env.CLIENT_SECRET,
+        client_id: env.GITHUB_CLIENT_ID || FALLBACK_CLIENT_ID,
+        client_secret: env.GITHUB_CLIENT_SECRET,
         code,
       }),
     });

@@ -1,8 +1,11 @@
 backend:
   name: github
-  repo: skiray/now-blog
+  # 必须是仓库的真实全名（大小写不敏感，但请与远端保持一致）
+  repo: skiray/NowBlog
   branch: master
   base_url: https://nowblog.pages.dev
+  # 自建 OAuth：functions/auth.js 与 functions/callback.js 提供 /auth 与 /callback
+  auth_endpoint: /auth
   auth_scope: repo
 
 # 本地预览用；静态站无需额外服务
