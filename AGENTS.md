@@ -1,12 +1,13 @@
 # AGENTS.md
 
-Astro 5 static site (零 JS 默认). Commands: `npm run dev` (localhost:4321), `npm run build`, `npm run preview`. There is **no** lint / typecheck / test script — do not look for or invent them.
+Astro 5 static site (零 JS 默认). Commands: `npm run dev` (localhost:4321), `npm run build`, `npm run preview`, `npm run check` (`astro check`, currently 0 errors). There is **no** lint / test script — do not look for or invent them.
 
 Project: 中文「今时录」/ 英文「NowBlog」；标语「记录此刻，留存当下」。Directory: `now-blog`.
 
 ## Build & verification
 
-- `npm run build` runs `astro build && pagefind --site dist`. Pagefind search index is generated **only** at build time.
+- `npm run build` runs `astro build && pagefind --site dist`. Pagefind search index is generated **only** at build time. A clean build produces 87 HTML files and indexes 29 pages across 2 languages; those counts moving is a signal, not an error.
+- `npm run check` must stay at 0 errors after touching `src/lib/mermaid-lite.ts` or the i18n key set.
 - **Only search is broken under `dev`.** Code highlighting (Expressive Code), Mermaid diagrams, the archive (`/blog/archive/`) and the article client JS (lightbox, TOC, back-to-top) all work in `npm run dev`. `/search` shows a placeholder because the index does not exist yet — verify search with `npm run build && npm run preview`.
 - Use `src/content/blog/{zh,en}/rendering-showcase.md` as the smoke test: it covers every element the pipeline supports.
 
@@ -29,7 +30,7 @@ flowchart TB
   subgraph RUN["运行期 · 浏览器"]
     direction TB
     PV["PostView.astro<br/>.prose 容器 · TOC · 标题锚点"]
-    MJS["mermaid 动态 import<br/>~683 kB · 仅含图表的页面"]
+    MJS["mermaid-lite 动态 import<br/>~845 kB · 仅含图表的页面"]
     ECJS["ec.js ~1 kB<br/>复制按钮 · 仅含代码块的页面"]
     UX["灯箱 · 回到顶部 · 阅读进度条"]
     PV --> MJS
@@ -53,9 +54,11 @@ flowchart TB
 ## i18n / content
 
 - Default locale `zh` has **no** URL prefix; English lives under `/en`. Config in `astro.config.mjs` (`prefixDefaultLocale: false`).
-- Blog posts live in `src/content/blog/zh/` and `src/content/blog/en/`. Each post needs **two** files with the **same slug**; mismatched slugs break language switching. Schema in `src/content/config.ts` includes optional `cover` (image path under `public/`), optional `draft` (boolean), and optional `category` (a category **id** from `src/data/categories.ts`).
-- UI strings (incl. long `about.bio` HTML and `brand`): `src/i18n/ui.ts`. Blog helpers (filter/sort/paginate/archive/related/reading time): `src/i18n/content.ts`. Per-locale RSS: `src/i18n/rss.ts` → `/rss.xml`, `/en/rss.xml`.
-- Classification model: categories are defined in `src/data/categories.ts` (`id` + zh/en labels; append there to add one). Current categories: `vibe-coding` / `app` / `bookkeeping` / `tech-talk`. Frontmatter `category` references an id — an unregistered id **fails the build**. URLs use the id (`/categories/vibe-coding/`), pages display the localized label, so language switching works on category pages. One category per post; `tags` = fine-grained labels (`/tags/`); `series` + `seriesOrder` = ordered docs inside one project. zh/en UI keys (`cats.*`, `nav.categories`, `post.category`) must stay in sync in `ui.ts`.
+- **Every page lives under `src/pages/[...locale]/`** — 404 included (`404.astro` there serves `dist/404.html` and `dist/en/404/`). There are no `src/pages/en/**` mirrors any more; adding a page means one file plus `getStaticPaths` from `localePaths()`.
+- Blog posts live in `src/content/blog/zh/` and `src/content/blog/en/`. A post with a counterpart in the other locale needs **the same slug** in both; mismatched slugs break language switching. Posts that exist in only one locale are fine: `PostView.astro` passes `langMissing` to `LangSwitch`, which points that locale at its blog index and dims the link (`lang.missing` tooltip) instead of 404ing. Schema in `src/content/config.ts` includes optional `cover` (image path under `public/`), optional `draft` (boolean), and optional `category` (a category **id** from `src/data/categories.ts`).
+- UI strings (incl. long `about.bio` HTML and `brand`): `src/i18n/ui.ts`. Every key must exist in **both** `zh` and `en` — the `en` block is typed against the `zh` key set, so a missing translation is a `astro check` error, not a runtime blank. Blog helpers (filter/sort/paginate/archive/related/reading time): `src/i18n/content.ts`. Per-locale RSS: `src/i18n/rss.ts` → `/rss.xml`, `/en/rss.xml`.
+- `src/i18n/routing.ts` is the single place that knows about URL prefixes: `prefix(locale)`, `localeFrom(params)`, `localePaths()` (for `getStaticPaths`) and `forEachLocale()`. Do not hand-roll `/en` string concatenation in a page or component — `content.ts` already provides `tagHref` / `authorHref` / `categoryHref` / `blogHref` for links.
+- Classification model: categories are defined in `src/data/categories.ts` (`id` + zh/en labels; append there to add one). Current categories: `vibe-coding` / `app` / `bookkeeping` / `tech-talk`. Frontmatter `category` references an id — an unregistered id **fails the build**. URLs use the id (`/categories/vibe-coding/`, `/en/categories/app/`), pages display the localized label. Category routes live in `src/pages/[...locale]/categories/` (`index.astro` + `[category].astro` + `[category]/rss.xml.ts`) like every other locale-aware route — note that a `[...locale]` folder page still needs `getStaticPaths` (use `localePaths()`). One category per post; `tags` = fine-grained labels (`/tags/`); `series` + `seriesOrder` = ordered docs inside one project. zh/en UI keys (`cats.*`, `nav.categories`, `post.category`) must stay in sync in `ui.ts`.
 - `draft: true` or future `pubDate` → excluded in `build`, kept in `dev` (see `getPosts`).
 
 ## Reading-experience features (article pages only)
@@ -82,7 +85,10 @@ Code blocks come from [Expressive Code](https://expressive-code.com/) through th
 Author diagrams with a ```mermaid fence. Two pieces make them work:
 
 - **Build time** — `src/plugins/rehype-mermaid.mjs` (registered as `markdown.rehypePlugins` in `astro.config.mjs`) rewrites the block into `<div class="mermaid" data-pagefind-ignore="all">`, so there is no flash of source code. It must stay registered **before** Expressive Code, so the fence is still a plain `<pre>` when it runs; the plugin reads the language off that `<pre>` (`data-language="mermaid"`), because the `<code>` element carries no `language-*` class.
-- **Run time** — `PostView.astro` dynamically imports `mermaid` only when the page contains `.mermaid`. Posts without diagrams never download it (the library is a ~683 kB / ~169 kB gzip lazy chunk). Theme follows `html[data-theme]` and repaints on `theme-change`.
+- **Run time** — `PostView.astro` dynamically imports `src/lib/mermaid-lite.ts` (not `mermaid` itself) only when the page contains `.mermaid`; posts without diagrams never download it. That module reuses mermaid's core and registers just the **flowchart** (`graph` / `flowchart`) and **sequence** renderers, so a diagram page executes ~845 kB / ~214 kB gzip instead of eagerly pulling in all ~50 diagram types (cynefin/cytoscape, KaTeX, gantt, …). Theme follows `html[data-theme]` and repaints on `theme-change`.
+  - Adding a diagram type means importing its renderer chunk and adding a detector in `src/lib/mermaid-lite.ts` (see the comment at the top of the file); an unregistered type now throws `UnknownDiagramError` rather than rendering.
+  - The chunk filenames it imports (`flowDiagram-HODETNUW.mjs`, `sequenceDiagram-WJ2MYXX4.mjs`, `chunk-DU6HZSFF.mjs`) are hashed by mermaid and **do change between versions** — bump them together with the `mermaid` dependency. `src/types/mermaid.d.ts` declares the deep imports so `astro check` stays clean.
+  - `mermaid.core` still lists every renderer in its internal lazy table, so those files stay in `dist/_astro`; they are simply never requested.
 
 Diagram source is excluded from the Pagefind index via `data-pagefind-ignore`.
 
@@ -97,13 +103,25 @@ Imported via Fontsource in `Layout.astro` frontmatter: `@fontsource/noto-serif-s
 - Change `site` in `astro.config.mjs` **and** the `Sitemap:` line in `public/robots.txt` together (both are currently `https://nowblog.pages.dev`) — RSS/sitemap URLs depend on them.
 - Replace identity: `brand` + `about.bio` in `src/i18n/ui.ts`, `SITE_TITLE/SITE_BRAND/SITE_DESCRIPTION/SITE_EMAIL` in `src/consts.ts`, `Hero.astro` / `AuthorCard.astro` avatar initials, and post `author` frontmatter.
 - Contact email is centralized in `SITE_EMAIL` (`src/consts.ts`); `AuthorCard.astro` renders it as the `mailto:` button.
-- Giscus is **enabled** for `skiray/now-blog`. To change repo/category, edit the `GISCUS` object in `src/components/Giscus.astro`; reverting any value to a `your-` prefix disables it again.
+- Giscus is **enabled** for `skiray/now-blog`, while `public/admin/config.yml` says `repo: skiray/NowBlog` — GitHub repo names are case-insensitive so both resolve, but if you rename or transfer the repo, update **both** files. To change repo/category, edit the `GISCUS` object in `src/components/Giscus.astro`; reverting any value to a `your-` prefix disables it again.
+
+## Content editor (Decap CMS at `/admin`)
+
+- `public/admin/index.html` loads Decap CMS from jsDelivr, pinned to an exact version **with an SRI hash**; the bundle is no longer committed. Bumping the version means recomputing the `integrity` value (the comment in that file has the one-liner).
+- `public/admin/config.yml` uses the `github` backend with `base_url` + `auth_endpoint: /auth`. The OAuth round trip is served by two Cloudflare Pages Functions: `functions/auth.js` (redirect to GitHub) and `functions/callback.js` (code → token, posted back to the popup).
+- Secrets: `GITHUB_CLIENT_SECRET` must be a Pages environment variable; `GITHUB_CLIENT_ID` / `SITE_ORIGIN` are optional and documented in `.env.example`. The GitHub OAuth app's callback URL must be `https://<domain>/callback`.
+- `functions/` is excluded from `tsconfig.json` and is not part of `astro build`; it only runs on Cloudflare (or `wrangler pages dev`).
 
 ## Legal pages
 
 - `/privacy` + `/terms` (and `/en/privacy`, `/en/terms`) come from `src/pages/[...locale]/{privacy,terms}.astro`, which both render the shared `src/components/LegalPage.astro`.
 - Their copy lives in `src/i18n/ui.ts` (`privacy.*` / `terms.*`); the "last updated" date is `LEGAL_UPDATED` in `src/consts.ts`. Bump it whenever the text changes.
 - Both inherit `Layout`'s default `indexable=false`, so Pagefind skips them, but they do appear in the sitemap.
+
+## Docs
+
+- `README.md` is the user-facing guide (功能 / 技术栈 / 本地开发 / 内容管理 / 部署 / 目录结构 / 新增文章). `AGENTS.md` is the maintainer/agent handbook. Both must be updated in the same change that alters routes, scripts, or the content workflow — a stale directory tree is the most common drift here.
+- Facts worth keeping in sync by hand: build output counts (87 HTML / 29 indexed pages), the `mermaid-lite` byte budget, the category id list.
 
 ## Conventions
 
