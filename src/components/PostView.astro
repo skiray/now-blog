@@ -53,6 +53,9 @@ const langHrefs: Partial<Record<"zh" | "en", string>> = {
   zh: locale === "zh" ? selfHref : otherHref,
   en: locale === "en" ? selfHref : otherHref,
 };
+// No translation yet: the other locale falls back to its blog index, which
+// LangSwitch dims and explains via `lang.missing`.
+const langMissing = counterpart ? undefined : otherLocale;
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -85,7 +88,7 @@ const fmt = post.data.pubDate.toLocaleDateString(
   indexable
 >
      <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)}></script>
-     <Navbar langHrefs={langHrefs} />
+     <Navbar langHrefs={langHrefs} langMissing={langMissing} />
    <div class="progress" aria-hidden="true"></div>
    <button id="to-top" class="to-top" type="button" aria-label="Back to top">
      ↑
@@ -812,7 +815,8 @@ const fmt = post.data.pubDate.toLocaleDateString(
     });
 
   // Diagrams. `mermaid` is behind a dynamic import, so posts without a
-  // ```mermaid block never download it.
+  // ```mermaid block never download it. The module is our minimal entry point
+  // (see src/lib/mermaid-lite.ts) rather than the full ~50-diagram build.
   const diagrams = Array.from(
     document.querySelectorAll<HTMLElement>(".prose .mermaid")
   );
@@ -825,7 +829,7 @@ const fmt = post.data.pubDate.toLocaleDateString(
     );
 
     const paint = async () => {
-      const { default: mermaid } = await import("mermaid");
+      const { default: mermaid } = await import("../lib/mermaid-lite");
       const dark = document.documentElement.dataset.theme !== "light";
       mermaid.initialize({
         startOnLoad: false,
