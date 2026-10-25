@@ -4,48 +4,46 @@ import Navbar from "../../../components/Navbar.astro";
 import Footer from "../../../components/Footer.astro";
 import { useTranslations } from "../../../i18n/ui";
 import { categoryLabel } from "../../../data/categories";
-import {
-  getPostsByCategory,
-  getCategories,
-  slugOf,
-  type Post,
-} from "../../../i18n/content";
-
-const locale = "en" as const;
-const t = useTranslations(locale);
+import { blogHref, getPostsByCategory, getCategories, slugOf } from "../../../i18n/content";
+import { localeFrom, localePaths } from "../../../i18n/routing";
 
 export async function getStaticPaths() {
-  const categories = await getCategories("en");
-  return Promise.all(
-    categories.map(async (category) => ({
-      params: { category },
-      props: { category, posts: await getPostsByCategory("en", category) },
-    }))
-  );
+  const paths: { params: Record<string, string | undefined> }[] = [];
+  for (const { params } of localePaths()) {
+    const locale = localeFrom(params);
+    for (const category of await getCategories(locale)) {
+      paths.push({ params: { ...params, category } });
+    }
+  }
+  return paths;
 }
 
-interface Props {
-  category: string;
-  posts: Post[];
-}
-const { category, posts } = Astro.props;
+const locale = localeFrom(Astro.params);
+const t = useTranslations(locale);
+const category = Astro.params.category!;
+const posts = await getPostsByCategory(locale, category);
 const label = categoryLabel(locale, category);
-const base = "/en/blog/";
+const base = blogHref(locale);
+const prefix = locale === "en" ? "/en" : "";
+const rssHref = `${prefix}/categories/${encodeURIComponent(category)}/rss.xml`;
 const fmt = (d: Date) =>
-  d.toLocaleDateString("en-US", {
+  d.toLocaleDateString(locale === "en" ? "en-US" : "zh-CN", {
     year: "numeric",
     month: "short",
     day: "numeric",
   });
 ---
 
-<Layout title={`${label} — NowBlog`} description={`Posts in category ${label}.`}>
+<Layout
+  title={`${label} — ${t("brand")}`}
+  description={t("cats.desc").replace("{category}", label)}
+>
   <Navbar />
   <main class="section">
     <div class="container narrow">
       <h1 class="reveal">{label}</h1>
       <p class="count reveal">{posts.length} {t("cats.count")}</p>
-      <a class="rss reveal" href={`/en/categories/${encodeURIComponent(category)}/rss.xml`}>RSS</a>
+      <a class="rss reveal" href={rssHref}>RSS</a>
       <div class="list">
         {
           posts.map((post, i) => (

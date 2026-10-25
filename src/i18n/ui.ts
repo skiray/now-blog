@@ -128,6 +128,8 @@ const ui = {
     "authors.sub": "站点作者列表。",
     "authors.desc": "作者 {name} 的文章。",
     "tag.desc": "标签 {tag} 下的文章。",
+    "cats.desc": "分类 {category} 下的文章。",
+    "lang.missing": "这篇文章尚未提供英文版，跳转至英文博客首页。",
   },
   en: {
     "nav.blog": "Blog",
@@ -249,6 +251,8 @@ const ui = {
     "authors.sub": "All authors on this site.",
     "authors.desc": "Posts by {name}.",
     "tag.desc": "Posts tagged {tag}.",
+    "cats.desc": "Posts in category {category}.",
+    "lang.missing": "No English version of this post yet — opens the English blog index.",
   },
 } as const;
 
