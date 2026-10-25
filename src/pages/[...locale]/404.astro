@@ -1,0 +1,74 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Navbar from "../../components/Navbar.astro";
+import Footer from "../../components/Footer.astro";
+import { defaultLocale, type Locale } from "../../i18n/ui";
+import { localeFrom, localePaths } from "../../i18n/routing";
+
+export function getStaticPaths() {
+  return localePaths();
+}
+
+const locale = localeFrom(Astro.params);
+const prefix = locale === defaultLocale ? "" : `/${locale}`;
+const home = `${prefix}/`;
+const blog = `${prefix}/blog/`;
+
+const copy: Record<Locale, { title: string; heading: string; sub: string; home: string; blog: string }> = {
+  zh: {
+    title: "404 — 页面未找到",
+    heading: "页面走丢了",
+    sub: "你访问的页面不存在，或已经被移动。",
+    home: "返回首页",
+    blog: "查看博客",
+  },
+  en: {
+    title: "404 — Page not found",
+    heading: "Page not found",
+    sub: "The page you're looking for doesn't exist or has moved.",
+    home: "Back home",
+    blog: "View blog",
+  },
+};
+const c = copy[locale];
+---
+
+<Layout title={c.title}>
+  <Navbar />
+  <main class="section">
+    <div class="container narrow center">
+      <span class="eyebrow">404</span>
+      <h1 class="reveal">{c.heading}</h1>
+      <p class="sub reveal">{c.sub}</p>
+      <div class="actions reveal">
+        <a class="btn btn-primary" href={home}>{c.home}</a>
+        <a class="btn btn-ghost" href={blog}>{c.blog}</a>
+      </div>
+    </div>
+  </main>
+  <Footer />
+</Layout>
+
+<style>
+  .container.narrow {
+    max-width: 640px;
+  }
+  .center {
+    text-align: center;
+    padding: 80px 0;
+  }
+  h1 {
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    margin: 12px 0;
+  }
+  .sub {
+    color: var(--text-dim);
+    margin-bottom: 32px;
+  }
+  .actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+</style>
