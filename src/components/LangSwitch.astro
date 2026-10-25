@@ -8,9 +8,17 @@ interface Props {
    * instead of a 404.
    */
   hrefs?: Partial<Record<Locale, string>>;
+  /**
+   * Target locale whose page does not exist. The link then points at that
+   * locale's blog index (see `hrefs`) and is styled as "no translation" so
+   * readers are not dropped on an unrelated-looking page without context.
+   */
+  missing?: Locale;
+  /** Tooltip / screen-reader hint for the `missing` locale link. */
+  missingNotice?: string;
 }
 
-const { hrefs } = Astro.props;
+const { hrefs, missing, missingNotice } = Astro.props;
 const current = (Astro.currentLocale ?? defaultLocale) as Locale;
 const path = Astro.url.pathname;
 
@@ -33,7 +41,11 @@ function hrefFor(target: Locale): string {
         <a
           href={hrefFor(target)}
           hreflang={target}
-          class={target === current ? "active" : ""}
+          class:list={[
+            target === current && "active",
+            target === missing && "missing",
+          ]}
+          title={target === missing ? missingNotice : undefined}
           aria-current={target === current ? "true" : undefined}
         >
           {label}
@@ -63,6 +75,11 @@ function hrefFor(target: Locale): string {
   }
   .lang a:hover {
     color: var(--text);
+  }
+  /* This locale has no translation of the page: dim it and hint in the tooltip. */
+  .lang a.missing:not(.active) {
+    opacity: 0.55;
+    font-style: italic;
   }
   .lang a.active {
     color: #fff;

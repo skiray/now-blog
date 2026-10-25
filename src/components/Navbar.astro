@@ -5,9 +5,11 @@ import { defaultLocale, useTranslations, type Locale, type UIKey } from "../i18n
 interface Props {
   /** Forwarded to LangSwitch; see that component for details. */
   langHrefs?: Partial<Record<Locale, string>>;
+  /** Locale with no translation of the current page, forwarded to LangSwitch. */
+  langMissing?: Locale;
 }
 
-const { langHrefs } = Astro.props;
+const { langHrefs, langMissing } = Astro.props;
 const locale = (Astro.currentLocale ?? defaultLocale) as Locale;
 const t = useTranslations(locale);
 // Every nav target must stay inside the active locale, including the brand link.
@@ -37,7 +39,7 @@ const links: { href: string; key: UIKey }[] = [
         type="button"
         aria-label={t("theme.toogle")}
       ></button>
-      <LangSwitch hrefs={langHrefs} />
+      <LangSwitch hrefs={langHrefs} missing={langMissing} missingNotice={t("lang.missing")} />
     </div>
   </div>
 </header>
