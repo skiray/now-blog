@@ -1,7 +1,12 @@
 node_modules
 dist
 .astro
+# Cloudflare / wrangler local state (Pages Functions are deployed from functions/)
+.wrangler
+.dev.vars
+# Secrets stay out of git; .env.example is the documented template
 .env
 .env.*
+!.env.example
 .DS_Store
 *.log
