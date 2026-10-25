@@ -1,7 +1,7 @@
 backend:
   name: github
-  # 必须是仓库的真实全名（大小写不敏感，但请与远端保持一致）
-  repo: skiray/NowBlog
+  # 必须是仓库的真实全名，与 Giscus.astro 及 origin 远程保持一致（仓库已改名为全小写 skiray/now-blog）
+  repo: skiray/now-blog
   branch: master
   base_url: https://nowblog.pages.dev
   # 自建 OAuth：functions/auth.js 与 functions/callback.js 提供 /auth 与 /callback

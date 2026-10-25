@@ -103,7 +103,7 @@ Imported via Fontsource in `Layout.astro` frontmatter: `@fontsource/noto-serif-s
 - Change `site` in `astro.config.mjs` **and** the `Sitemap:` line in `public/robots.txt` together (both are currently `https://nowblog.pages.dev`) — RSS/sitemap URLs depend on them.
 - Replace identity: `brand` + `about.bio` in `src/i18n/ui.ts`, `SITE_TITLE/SITE_BRAND/SITE_DESCRIPTION/SITE_EMAIL` in `src/consts.ts`, `Hero.astro` / `AuthorCard.astro` avatar initials, and post `author` frontmatter.
 - Contact email is centralized in `SITE_EMAIL` (`src/consts.ts`); `AuthorCard.astro` renders it as the `mailto:` button.
-- Giscus is **enabled** for `skiray/now-blog`, while `public/admin/config.yml` says `repo: skiray/NowBlog` — GitHub repo names are case-insensitive so both resolve, but if you rename or transfer the repo, update **both** files. To change repo/category, edit the `GISCUS` object in `src/components/Giscus.astro`; reverting any value to a `your-` prefix disables it again.
+- Giscus is **enabled** for `skiray/now-blog`. The same repo name appears in `public/admin/config.yml` (Decap backend) — keep the two in sync when renaming or transferring the repo, plus the `origin` remote. To change repo/category, edit the `GISCUS` object in `src/components/Giscus.astro`; reverting any value to a `your-` prefix disables it again.
 
 ## Content editor (Decap CMS at `/admin`)
 
